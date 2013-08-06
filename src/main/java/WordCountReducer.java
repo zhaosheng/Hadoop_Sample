@@ -16,6 +16,7 @@ public class WordCountReducer extends Reducer<Text, LongWritable, Text, LongWrit
 
     @Override
     protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+        // Reduce function goes here
         long sum = 0;
 
         for (LongWritable value : values) {

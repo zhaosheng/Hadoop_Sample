@@ -19,6 +19,8 @@ public class WordCountMapper extends Mapper<LongWritable, Text, Text, LongWritab
 
     @Override
     protected void map(LongWritable key, Text value, Mapper.Context context) throws IOException, InterruptedException {
+        // Map function goes here
+
         String[] vals = value.toString().split(" ");
         for (String val : vals) {
             writeKey.set(val);
