@@ -1,0 +1,665 @@
+Back to DataWarehouse or DataWarehouse/Users
+
+Source: EBAY_USERS and EBAY_USER_INFO
+
+Databases
+
+ACCESS_VIEWS
+PRS_SECURE_V (Contains PII information)
+Fields
+
+USER_ID
+Oracle ID that uniquely identifies a user.
+USER_CNTRY_ID
+The country ID of the country that this user lives in.
+This value is very important, since it determines where we attribute revenue from that seller. Revenue is assigned based on seller country.
+Joins to DataWarehouse/Lookups/DW_COUNTRIES
+USER_CRE_DATE
+The timestamp that the user record was created on the site. This date should never change.
+This is populated once the user reaches the RU state. Confirmation is NOT required to have a user record created.
+USER_SLCTD_ID
+The eBay username chosen by the user. This is the name that most people see on the site.
+This does NOT contain the multi-byte user ID for multi-byte sites. That's stored in MBYTE_USERID (see below).
+This field is NOT guaranteed to be unique.  There are several cases where two different user_id have the same user_slctd_id.  See 'dealgenius' or 'leisurepro' as examples (rdieckma Apr 27,2012). As of Dec 2012 there are more than 7 million such duplicate or even triplicate cases (uwemayer).
+USER_SITE_ID
+The site ID the user registered on.
+This can't change (true?) once the record has been created.
+In 2008, I changed my USER_SITE_ID from US to CH simply by calling CS and requesting it!
+It can be changed by user but it can’t be changed too often. You can get the data by the following data (Details provided by Jun He):
+SELECT COUNT(1) FROM dw_user_info_chg WHERE user_info_chg_type_id = 12 AND chg_dt > '2011-01-01'
+Joins to DataWarehouse/Lookups/DW_SITES
+USER_STS_CODE
+User status code
+Lots of status information stored here. Important note: eBay Express, Half and Shopping.com users will get a "Confirmed" value despite not having gone through an email confirmation step.
+Potential values are:
+-1 = Unknown
+0 = Suspended
+1 = Confirmed
+2 = Unconfirmed
+3 = Ghost
+4 = In Maintenance
+5 = Deleted (can be used to differentiate junk / inactive records corresponding to same User Selected IDs)
+6 = CC Verify
+7 = Account on Hold
+8 = Merged
+9 = Reg Code Email Out
+10 = Term Pending
+11 = Unconfirmed (Half Opt In)
+12 = CC Verify (Half Opt In)
+13 = Unconfirmed (Passport)
+14 = CC Verify (Passport)
+15 = Unconfirmed (Express)
+16 = Visitor
+17 = Guest (Created in Streamlined BIN project)
+99999999 = Invalid
+The lookup table for this field is DW_USER_STATUS_CODES.
+The definitive location for the values in this field is in ClearCase at: /v3core/CoreDomain/CoreDomainCommon/src/com/ebay/domain/core/common/UserEnum.java
+DATE_CONFIRM
+The date the user became a confirmed member.
+There are potential issues with this field, since it doens't necessarily represent the FIRST time the user became a CRU.
+Also, there are two known cases (Half, Express and Shopping.com users) where a user has a NULL value in this field but is a confirmed user (USER_STS_CODE = 1). So this field can't always be used to test confirmed status.
+USER_CRE_PRD_ID
+USER_CRE_WEEK_ID
+USER_NAME
+Also a split based on the users first and last name (USER_FIRST_NAME,USER_LAST_NAME) can be obtained in PRS_SECURE_V.DW_USERS.
+ADDR1
+ADDR2
+ADDR2_USED_YN_ID
+ADDR
+CITY
+STATE
+PSTL_CODE
+DAYPHONE
+Primary phone number of the user. Frequently the numbers are transformed to be pipe-delimited values (e.g. "415|999|8260").
+Note that if you're attempting to contact this user, you MUST ensure that this user has agreed to be contacted by phone (the WANT_TELEMARKETING flag below).
+EMAIL
+Contains the user's email address.
+This column is considered PII (Personally Identifiable Information), and hence isn't available in ACCESS_VIEWS, but is exposed for users who have PII access privileges in PRS_SECURE_V
+Note that if you're attempting to contact this user, you MUST ensure that this user has agreed to be contacted by phone (the TAKE_PART_IN_SURVEYS flag below).
+Cannot be the same for multiple accounts; sometimes it seems one email for multiple accounts, but after careful check, one/more space following the email makes them different emails.  It may be a site issue.
+FAXPHONE
+NIGHTPHONE
+CELLPHONE
+FEEDBACK_SCORE
+Contains the user's current feedback score
+Some (probably old) records have a FEEDBACK_SCORE value of NULL.
+GENDER_MFU
+M = Male
+F = Female
+U = Unknown - User did not fill in gender information during registraion
+D = 'Deleted' indicates that PD has soft deleted inactive user and all PII information in DW has been removed.
+GOOD_CRD_YN
+LAST_MODFD
+PREF_CATEG_INTEREST1_ID
+Contains the users' first Favorite Category
+Note that currently this category ID can ONLY map to the user's site of registration, so when joining to DW_CATEGORY_GROUPINGS, use the USER_SITE_ID to do so.
+PREF_CATEG_INTEREST2_ID
+Contains the users' second Favorite Category
+PREF_CATEG_INTEREST3_ID
+Contains the users' third Favorite Category
+PREF_CATEG_INTEREST4_ID
+Contains the users' fourth Favorite Category
+PAYMENT_TYPE
+0 - none
+1 - Credit Card
+23 - Paypal
+22 - Paypal primary, Credit Card secondary
+PAYMENT_TYPE_LAST_MDFD_DATE
+The last date that a seller updates payment method
+TOP_SLR_LVL_CODE
+Active power sellers have a repeating value ex: 11,22,33,44, etc.
+More info on Power Sellers can be found at DataWarehouse/PowerSeller
+TOP_SLR_INITIATE_DATE
+More info on Power Sellers can be found at DataWarehouse/PowerSeller
+BANNER_PRTNR_ID
+BLNG_CURNCY_ID
+CC_ONFILE_YN
+COBRAND_PRTNR_ID
+COMP
+This maps to the COMPANY field in EBAY_ITEMS. Seems like it stores the Company Name, if relevant.
+DW_USERS_INFO_CRE_DATE
+DW_USERS_INFO_CRE_USER
+DW_USERS_INFO_UPD_DATE
+DW_USERS_INFO_UPD_USER
+EQUIFAX_ATTEMPTS
+EQUIFAX_LAST_MODFD_DATE
+EQUIFAX_STS
+Used for Id Verified or better known in Germany as PostIdent
+Possible Values are P: Verified by PostIdent; N: No; F; G; R ;?
+SIGNED_AGREEMENT
+EMAIL_USER_AGREEMENT_CHANGES
+EMAIL_PRIVACY_POLICY_CHANGES
+TAKE_PART_IN_SURVEYS
+Flag to indicate whether this user has opted to take part in surveys.
+Must be used when attempting to contact user's for survey purposes.
+Potential values: 'Y' = Take part, 'N' = Don't take part.
+LINKED_PAYPAL_ACCT
+PayPal account ID
+This is an encrypted value. However, it is based on a standard encryption methodology, so the encrypted value should match with other encrypted account IDs.
+Joins to DataWarehouse/PayPal/DW_PP_ACCT.PP_ACCT_ID
+Join to this table to check Paypal verified status
+Linking eBay and PayPal accounts makes buying on eBay even easier in conditions where the seller accepts PayPal. The buyer can use eBay's Checkout process to quickly pay for the item and have it shipped to the preferred address.
+PAYPAL_LINK_STATE
+Indicates the state of PayPal linkage for this eBay user.
+Is directly pulled from site table (no transformation) and hence it’s not 100% accurate, due to API call disconnection between PayPal PD and eBay PD (Updated on Mar 30, 2010)
+Potential values: (NULL = Never attempted to link, 0 = No link found, 1 = Hard link (link initialized & confirmed by user), 2 = Soft link (link created by batch application matching eBay & PayPal emails - not confirmed by user, 3 = Hard Unlink (user explicitly unlinks the two accouts)
+Other site for Account Linking (Updated on Mar 30, 2010)
+REGISTERED_BULK_USER
+VERIFIED_AS_ADULT
+VERIFIED_ANON
+ABOUTMEPAGE
+HAS_A_NOTE
+PERSONAL_SHOPPER
+DO_NOT_EMAIL_ME_BID_NOTICES
+DO_NOT_EMAIL_OUTBID_NOTICES
+DO_NOT_EMAIL_LISTING_NOTICES
+DO_NOT_EMAIL_DAILY_STATUS
+SUPPORT_POLICE_BADGE
+HAS_BLOCKED_ITEM
+DO_NOT_EMAIL_END_OF_AUCTION
+EMAIL_SPECL_PROMOSOFFERSEVENTS
+Y/N field indicating if a user has elected to receive email promotions.
+AUCTION_HOUSE
+DEALER_REG
+DEALER_PREMIUM
+HAS_EBAY_VISA_PROMO_CREDIT
+QUALIFIED_FOR_BILLPOINT
+REGISTERED_FOR_BILLPOINT
+WANT_EMAIL_CSTMR_SPPRT_SRV
+Y/N field indicating if a user wanted to get email for Customer Support Surveys
+WANT_TELEMARKETING
+There is no historical data for this field (derived from site table ebay_users.flags (0x08000000)) or any marketing preference field and only up to date data is stored.
+WANT_DIRECT_MAIL
+FEEDBACK_PRIVATE
+Indicates whether the user has chosen to keep their feedback private. Potential values: ('Y' = Yes, 'N' = No). The default value for eBay users is 'N'.
+HALF_MIGRATED_USER
+HALF_MERGED_USER
+HALF_ORIGIN_USER
+USER_REGN_ID
+USERID_LAST_CHG
+UVDETAIL
+UV stands for "user verification"; this is a mechanism to determine whether a user has provided accurate information when registering.
+uvdetail is a set of bit-flags which each indicate whether a particular test of the user's information passed. For example, one test simply checks if the phone number is at least 10 digits long. Another test checks if the area code matches the state (area codes never serve more than one state, so if you have an area code you can find out what state it is for). Each bit in the uvdetail field shows whether or not the associated test was passed.
+UVRATING
+uvrating is a numeric score indicating how good the user's information looks. If all tests are passed the user will have a score of 13. If all tests are failed the user will have a score of negative 51. There are two special values for this field, negative 99999 which means the rating was not calculated, and negative 99998 which means the user lives in a country that we don't know how to rate (I once was a bit surprised to find out that in Germany, even in the same city, different people may have phone numbers of different length. This probably makes verification checks like this a lot harder).
+Note: 83305 users on minimart (and thus on production) have null values for uvdetail. Of those, 82358 are "ghost" users, who were registered on AuctionWeb but never confirmed on eBay. Only 649 confirmed users, out of some 15 million, have null uvrating. None of these 649 have an ebay_user_info record, so we can assume their information is junk
+Bit values and scoring system can be found at: http://iweb.corp.ebay.com/SiteDBAs/Documents/FAQs/uvrating.htm
+That table should really be recreated in the wiki but I'm too lazy to do it right now
+
+USER_CONFIRM_CODE
+USER_SEX_FLAG
+Poorly named field. This is actually a packed bit field. See DataWarehouse/Flags for decode. Look for ebay_users.flagsex.
+Definitive source for this field: XML file
+0x00000001 (1) eUserFlagCheckoutOff (created by unknown on 01/01/2005)
+0x00000002 (2) eUserFlagAuctionWatch (created by unknown on 01/01/2005)
+0x00000004 (4) eUserFlagOutBidEmail2 (created by unknown on 01/01/2005)
+0x00000008 (8) eUserFlagEOAEmail2 (created by unknown on 01/01/2005)
+0x00000010 (16) eUserFlagPastDue (created by unknown on 01/01/2005)
+0x00000020 (32) eUserFlagAutoTrader (created by unknown on 01/01/2005)
+0x00000040 (64) eUserFlagASsuspended (created by unknown on 01/01/2005)
+0x00000080 (128) eUserFlagASPrevSuspended (created by unknown on 01/01/2005)
+0x00000100 (256) eUserFlagASBlocked (created by unknown on 01/01/2005)
+0x00000200 (512) eUserFlagOwnsStore (created by unknown on 01/01/2005) (Last Wiki Update - 2/12/2010)
+Identifies if a user has a store or not
+eBay outlet sellers on UK site are same as sellers on U.S. site who have a store. (More on Filtering eBay Outlet Sellers on UK Site)
+Logic to be used:
+CASE WHEN ((DW_USERS.user_sex_flag MOD 512)=(DW_USERS.user_sex_flag MOD (2*512))) THEN 'N' ELSE 'Y' END
+0x00000400 (1024) eUserFlagEOARecoEmail (created by unknown on 01/01/2005)
+0x00000800 (2048) eUserFlagExBillpointRegisteredBuyer (created by unknown on 01/01/2005)
+0x00001000 (4096) eUserFlagExPersonalOfferEmail (created by unknown on 01/01/2005)
+0x00002000 (8192) eUserFlagSellerRecoEmail (created by unknown on 01/01/2005)
+0x00004000 (16384) eUserFlagExBuyerSpeedyCheckout (created by unknown on 01/01/2005)
+0x00008000 (32768) eUserFlagVERO (created by unknown on 01/01/2005)
+0x00010000 (65536) eUserFlagCIPWithdrawn (created by unknown on 01/01/2005)
+0x00020000 (131072) eUserFlagCurrentInvoiceHTML (created by unknown on 01/01/2005)
+0x00040000 (262144) eUserFlagExHalfMerged (created by unknown on 01/01/2005)
+0x00080000 (524288) eUserFlagTARegisterBlocked (created by unknown on 01/01/2005)
+0x00100000 (1048576) eUserFlagExNoCrossMerchandising (created by unknown on 01/01/2005)
+0x00200000 (2097152) eUserFlagUserOnceAStoreOwner (created by unknown on 01/01/2005)
+0x00400000 (4194304) eUserFlagExSellerEnteredBillingAddress (created by unknown on 01/01/2005)
+0x00800000 (8388608) eUserFlagHalfRegisteredSeller (created by unknown on 01/01/2005)
+0x01000000 (16777216) eUserFlagPaymentAddress (created by unknown on 01/01/2005)
+0x02000000 (33554432) eUserFlagOutBidMSAlerts (created by unknown on 01/01/2005)
+0x04000000 (67108864) eUserFlagEOAMSAlerts (created by unknown on 01/01/2005)
+0x08000000 (134217728) eUserFlagRandomPassword (created by unknown on 01/01/2005)
+0x10000000 (268435456) eUserFlagExEbayExpressAgreement (created by unknown on 01/01/2005)
+0x20000000 (536870912) eUserFlagExDefaultShowEOP (created by unknown on 01/01/2005)
+0x40000000 (1073741824) eUserFlagExSubsidiary (created by unknown on 01/01/2005)
+FLAGSEX2
+See DataWarehouse/Flags for decode.
+0x00000001 (1) eUserFlagHalfTransitionSeller (created by unknown on 01/01/2005)
+0x00000002 (2) eUserFlagLASothebysSeller (created by unknown on 01/01/2005)
+0x00000004 (4) eUserFlagSothebysBidder (created by unknown on 01/01/2005)
+0x00000008 (8) eUserFlagSothebysOptin (created by unknown on 01/01/2005)
+0x00000010 (16) eUserFlagSothebysPremier (created by unknown on 01/01/2005)
+0x00000020 (32) eUserFlagSothebysBillpoint (created by unknown on 01/01/2005)
+0x00000040 (64) eUserFlagMerchPanel (created by unknown on 01/01/2005)
+0x00000080 (128) eUserFlagSiteEmailFormatPrefText (created by unknown on 01/01/2005)
+0x00000100 (256) eUserFlagCCSellerOnInvoice (created by unknown on 01/01/2005)
+0x00000200 (512) eUserFlagNPBWarningAlertPopUp (created by unknown on 01/01/2005)
+0x00000400 (1024) eUserFlagMTCheckoutRedirect (created by unknown on 01/01/2005)
+0x00000800 (2048) eUserFlagInvalidEmail (created by unknown on 01/01/2005)
+0x00001000 (4096) eUserFlagInvalidEmailOptOut (created by unknown on 01/01/2005)
+0x00002000 (8192) eUserFlagEx2MarkedForDelayedSuspension (created by unknown on 01/01/2005)
+0x00004000 (16384) eUserFlagROITagRegistration (created by unknown on 01/01/2005)
+0x00008000 (32768) eUserFlagVeROADProgramMember (created by unknown on 01/01/2005)
+0x00010000 (65536) eUserFlagAcceptPKAgreement (created by unknown on 01/01/2005)
+0x00020000 (131072) eUserFlagShowMerchPanelOnVI (created by unknown on 01/01/2005)
+0x00040000 (262144) eUserFlagUserSurveyEnable (created by unknown on 01/01/2005)
+0x00080000 (524288) eUserFlagUseMerchantToolCheckout (created by unknown on 01/01/2005)
+0x00100000 (1048576) eUserFlagPopupSurveyDone (created by unknown on 01/01/2005)
+0x00200000 (2097152) eUserFlagNoPaymentAddressInInvoice (created by unknown on 01/01/2005)
+0x00400000 (4194304) eUserFlagMotorLowerPrice (created by unknown on 01/01/2005)
+0x00800000 (8388608) eUserFlagRegisteredBusinessSeller (created by unknown on 01/01/2005)
+0x01000000 (16777216) eUserFlagPastDueAutoPaymentExempt (created by unknown on 01/01/2005)
+0x02000000 (33554432) eUserFlagPersonalOfferOptIn (created by unknown on 01/01/2005)
+0x04000000 (67108864) eUserFlagSellingManagerCacheActive (created by unknown on 01/01/2005)
+0x08000000 (134217728) eUserFlagDisplayNPBPopUp (created by unknown on 01/01/2005)
+0x10000000 (268435456) eUserFlagPrimarySeller (created by unknown on 01/01/2005)
+0x20000000 (536870912) eUserFlagSellerNotInGoodStanding (created by unknown on 01/01/2005)
+0x40000000 (1073741824) eUserFlagROITagRegisterConfirm (created by unknown on 01/01/2005)
+FLAGSEX3
+See DataWarehouse/Flags for decode.
+0x00000001 (1) eUserFlagWatchNoticePreference (created by unknown on 01/01/2005)
+0x00000002 (2) eUserFlagWatchNoticeEbayOpted (created by unknown on 01/01/2005)
+0x00000004 (4) eUserFlagBuyerBlockPrefEnabled (created by unknown on 01/01/2005)
+0x00000008 (8) eUserFlagShipToLocationRestrictionPref (created by unknown on 01/01/2005)
+0x00000010 (16) eUserFlagFeedbackRestrictionPref (created by unknown on 01/01/2005)
+0x00000020 (32) eUserFlagUPIStrikeRestrictionPref (created by unknown on 01/01/2005)
+0x00000040 (64) eUserFlagHasBBPExemptedBidders (created by unknown on 01/01/2005)
+0x00000080 (128) eUserFlagSiteUnverified (created by unknown on 01/01/2005)
+0x00000100 (256) eUserFlagEmptyUserInfo (created by unknown on 01/01/2005)
+0x00000200 (512) eUserFlagVisitedMessageCenter (created by unknown on 01/01/2005)
+0x00000400 (1024) eUserFlagSalesReportUpdatesOptIn (created by unknown on 01/01/2005)
+0x00000800 (2048) eUserFlagFeedbackReminderOpted (created by unknown on 01/01/2005)
+0x00001000 (4096) eUserFlagOnVacation (created by unknown on 01/01/2005)
+0x00002000 (8192) eUserFlagHideSIF (created by unknown on 01/01/2005)
+0x00004000 (16384) eUserFlagAddressMatchPerformed (created by unknown on 01/01/2005)
+0x00008000 (32768) eUserFlagFRDirectMarketingOptIn (created by unknown on 01/01/2005)
+0x00010000 (65536) eUserFlagMyeBayFavoriteSearches (created by unknown on 01/01/2005)
+0x00020000 (131072) eUserFlagMyeBayFavoriteSellers (created by unknown on 01/01/2005)
+0x00040000 (262144) eUserFlagStoreOnVacation (created by unknown on 01/01/2005)
+0x00080000 (524288) eUserFlagExNoCrossMerchandisingCheckout (created by unknown on 01/01/2005)
+0x00100000 (1048576) eUserFlagExSellerEligibleforSYI (created by unknown on 01/01/2005)
+0x00200000 (2097152) eUserFlagsEx3BlockBidderNoPayPalAccount (created by unknown on 01/01/2005)
+0x00400000 (4194304) eUserFlagsEx3SyiDraftReminderEmail (created by unknown on 01/01/2005)
+0x00800000 (8388608) eUserFlagsEx3SellerHasTaxTable (created by unknown on 01/01/2005)
+0x01000000 (16777216) eUserFlagsEx3SellerHasBranding (created by unknown on 01/01/2005)
+0x02000000 (33554432) eUserFlagsSellerRegDDCreditGiven (created by unknown on 01/01/2005)
+0x04000000 (67108864) eUserFlagsSellerRegDDCreditEligible (created by unknown on 01/01/2005)
+0x08000000 (134217728) eTaiwanAddressSyncUp (created by unknown on 01/01/2005)
+0x10000000 (268435456) eUserFlagEx3BusinessUser (created by unknown on 01/01/2005)
+0x20000000 (536870912) eUserFlagsEx3BuyerHasCCOnFile (created by unknown on 01/01/2005)
+0x40000000 (1073741824) eUserFlagsEx3TWUserAddressFixed (created by unknown on 01/01/2005)
+FLAGSEX4
+See DataWarehouse/Flags for decode.
+0x00000001 (1) eUserFlagsPaisaPayRegistered (created by unknown on 01/01/2005)
+0x00000002 (2) eUserFlagsPaisaPaySuspended (created by unknown on 01/01/2005)
+0x00000004 (4) eUserFlagsPaisaPayOutPaymentSuspended (created by unknown on 01/01/2005)
+0x00000008 (8) eUserFlagsPaisaPayNonHDFCCity (created by unknown on 01/01/2005)
+0x00000010 (16) eUserFlagPromotionPreference (created by unknown on 01/01/2005)
+0x00000020 (32) eUserFlagFirstTimeBuyer (created by unknown on 01/01/2005)
+0x00000040 (64) eUserFlagFileExchangeUser (created by unknown on 01/01/2005)
+0x00000080 (128) eUserFlagsHalfOnVacation (created by unknown on 01/01/2005)
+0x00000100 (256) eUserFlagsNewSellerWelcomeEmail (created by lzhang on 03/16/2005)
+0x00000200 (512) eUserFlagsLapsedEmail (created by qlu on 04/12/2005)
+0x00000400 (1024) eUserFlagsLapsedEmailInitialized (created by qlu on 04/14/2005)
+0x00000800 (2048) eUserFlagsHasEmailCampaign (created by rsegaran on 01/01/2005)
+This flag is for Seller Email Marketing 2.0. It's used to check if store owner has an email campaign.
+Information about users who have opted in for SEM (Seller Email Marketing) are tracked in DataWarehouse/MyeBay/DW_MYEBAY_SAV_SELLER
+0x00001000 (4096) eUserFlagsSMMyEbayOneTimeMigration (created by dvaradarajan on 01/01/2005)
+0x00002000 (8192) eUserFlagsPurchaseInitiatedOnHalf (created by jwesley on 05/24/2005)
+0x00004000 (16384) eUserFlagsPurchaseSuccessfulOnHalf (created by jwesley on 05/24/2005)
+0x00008000 (32768) eUserFlagsItemListedOnHalf (created by jwesley on 05/24/2005)
+0x00010000 (65536) eUserFlagsUpSellPageNotShownOnHalfCheckout (created by jwesley on 05/24/2005)
+0x00020000 (131072) eUserFlagsNoCrossSellerPromotions (created by bheda on 06/07/2005)
+0x00040000 (262144) eUserFlagsHalfSeller (created by ksankaranarayan on 06/24/2005)
+0x00080000 (524288) eUserFlagsRowTransition (created by sbhalla on 08/09/2005)
+0x00100000 (1048576) eUserFlagsHalfFTPSeller (created by shuchen on 07/19/2005)
+0x00200000 (2097152) eUserFlagsHalfSellerInventoryAdminDisabled (created by lmaddali on 07/25/2005)
+0x00400000 (4194304) eUserFlagFeedbackRemovalAlertOpted (created by srgopalakrishnan on 07/26/2005)
+0x00800000 (8388608) eUserFlagZeroFeedbackBlock (created by qwu on 08/02/2005)
+0x01000000 (16777216) eUserFlagExtendedM2MExpiration (created by myelsukov on 08/04/2005)
+0x02000000 (33554432) eUserFlagCompanyNameNonEditable (created by pmohideen on 08/08/2005)
+0x04000000 (67108864) eUserFlagKP_CSForceOut (created by dsilver on 08/10/2005)
+0x08000000 (134217728) eUserFlagKP_CSForceIn (created by dsilver on 08/10/2005)
+0x10000000 (268435456) eUserFlagKP_OptOut (created by dsilver on 08/10/2005)
+0x20000000 (536870912) eUserFlagKP_SystemIn (created by dsilver on 08/10/2005)
+0x40000000 (1073741824) eUserFlagMyMessagesNotificationOptOut (created by marlee on 08/10/2005)
+FLAGS01
+See DataWarehouse/Flags for decode.
+FLAGSEX5
+See DataWarehouse/Flags for decode.
+0x00000001 (1) eUserFlagSellerOfferShippingDiscount (created by vajoshi on 08/29/2005)
+0x00000002 (2) eUserFlagInfoTipsMessagesDirty (created by marlee on 10/01/2005)
+0x00000004 (4) eUserFlagEbxUser (created by ndurairaj on 10/03/2005)
+0x00000008 (8) eUserFlagEbxEulaAccepted (created by ndurairaj on 10/03/2005)
+0x00000010 (16) eUserFlagNotConfirmedEmail (created by ndurairaj on 10/03/2005)
+0x00000020 (32) eUserFlagPaisaPayChargebackFraud (created by lqian on 10/14/2005)
+0x00000040 (64) eUserFlagPowerBuyerVisibility (created by aprasanna on 11/22/2005)
+0x00000080 (128) eUserFlagSellerPreferToListInKP (created by bantony on 12/01/2005)
+0x00000100 (256) UserFlagNoResponseEmailOptIn (created by soumdas on 12/15/2005)
+0x00000200 (512) IsPartnerVerifiedAutosDealer (created by shamilton on 12/22/2005)
+0x00000400 (1024) SMSSubscription (created by sicxu on 01/08/2005)
+0x00000800 (2048) UserSellerFlagSpecialOffer (created by yfeldman on 01/09/2006)
+0x00001000 (4096) eUserFlagBuyerVerificationRequired (created by ndurairaj on 01/10/2006)
+0x00002000 (8192) UserPreferenceMigrated (created by yfeldman on 01/25/2006)
+0x00004000 (16384) unknown1 (created by sganesh on 01/27/2006)
+0x00008000 (32768) unknown2 (created by sganesh on 01/27/2005)
+0x00010000 (65536) ActiveExpressShoppingCart (created by maswamy on 01/24/2007)
+0x00020000 (131072) WAPUser (created by jlu on 02/14/2006)
+0x00040000 (262144) eUserFlagAvalonShowBadge (created by lqian on 03/01/2006)
+0x00080000 (524288) eUserFlagAvalonAllowComments (created by lqian on 03/01/2006)
+0x00100000 (1048576) eUserFlagKP_OptInEbxOnly (created by bparthasarathy on 03/02/2006)
+0x00200000 (2097152) IMSubscription (created by simchen on 03/07/2006)
+0x00400000 (4194304) UserCreatedByCS (created by shchaudhari on 03/31/2006)
+0x00800000 (8388608) BuyerDailyStatus (created by hyenisetty on 04/11/2006)
+0x01000000 (16777216) DailyStatusMigrated (created by hyenisetty on 04/11/2006)
+0x02000000 (33554432) IDVerifyTypeStandard (created by txian on 04/12/2006)
+0x04000000 (67108864) IDVerifyTypeBusiness (created by txian on 04/12/2006)
+0x08000000 (134217728) IDVerifyTypePharma (created by txian on 04/12/2006)
+0x10000000 (268435456) SkypeBlockedSeller (created by sapillai on 04/13/2006)
+0x20000000 (536870912) AllowUserCreateWiki (created by txian on 04/17/2006)
+0x40000000 (1073741824) BlockUserCreateProductWiki (created by ksankaranarayan on 04/20/2006)
+FLAGSEX6
+See DataWarehouse/Flags for decode.
+Definitive source: XML file
+0x00000001 (1) NoLogin (created by rtsow on 04/26/2006)
+0x00000002 (2) User is created by SDC (this should apply to sellers)
+0x00000004 (4) User is registered in the SDC flow (this should apply to buyers)
+0x00000008 (8) 2FAUser (created by kmohan on 06/08/2006)
+0x00000010 (16) WatchAlertRelisted (created by msomani on 06/13/2006)
+0x00000020 (32) WatchAlertRelistedMigrated (created by msomani on 06/13/2006)
+0x00000040 (64) SellerRegFromSYI (created by sau on 06/13/2006)
+0x00000080 (128) SellerEnhancedShippingDiscountMigrated (created by sramakrishna on 06/22/2006)
+0x00000100 (256) HasBio (created by jshamugam on 07/06/2006)
+0x00000200 (512) HasMyWorldPortalPref (created by jshanmugam on 07/06/2006)
+0x00000400 (1024) 2FACurrentlyEnabled (created by kmohan on 07/13/2006)
+0x00000800 (2048) IDVerifyBilled (created by ncholavaram on 08/15/2006)
+0x00001000 (4096) ExpressRegAddressEdited (created by sbhalla on 08/16/2006)
+0x00002000 (8192) RegiconfirmEmailsent (created by sbhalla on 08/22/2006)
+0x00004000 (16384) HasDefaultWishlist (created by edtang on 08/24/2006)
+0x00008000 (32768) TrustedMember (created by sudutta on 09/13/2006)
+0x00010000 (65536) IsHighRiskUserDuringBuyerRegistration (created by ndurairaj on 09/18/2006)
+0x00020000 (131072) HasUserAddedFirstWishListItem (created by lfernandes on 09/21/2006)
+0x00040000 (262144) HasUserPreApprovedBidderPermission (created by nraghuram on 09/26/2006)
+0x00080000 (524288) ExpressPulseEMailSubscription (created by nraghuram on 09/26/2006)
+0x00100000 (1048576) eUserFlagBuyerHighRiskEvaluated (created by ndurairaj on 10/12/2006)
+0x00200000 (2097152) PayPalverification (created by phenry on 10/16/2006)
+0x00400000 (4194304) VerifyEmailRenamePending (created by ndurairaj on 10/23/2006)
+0x00800000 (8388608) PPLListingBlocked (created by yixia on 10/28/2006)
+0x01000000 (16777216) HasUserAddedFirstItemToPrivateWishList (created by tthoria on 11/06/2006)
+0x02000000 (33554432) HasFirstVisitOfPublicWishListwithNoAddress (created by tthoria on 11/06/2006)
+0x04000000 (67108864) HasListedFirstClassifiedAd (created by shamilton on 11/22/2006)
+0x08000000 (134217728) IsUserGoneThroughAuthentify (created by dhavalpatel on 11/27/2006)
+0x10000000 (268435456) UserBlockedFromCommentingOnBlogs (created by jkojo on 12/15/2006)
+0x20000000 (536870912) UserBlockedFromActingOnBlogs (created by jkojo on 12/15/2005)
+0x40000000 (1073741824) SafePaymentMethodExempt (created by mgrabovac on 01/08/2007)
+FLAGSEX7
+See DataWarehouse/Flags for decode.
+0x00000001 (1) EBXHalfSellerOptIn (created by agoel on 01/31/2007)
+0x00000002 (2) DataMigrationOptOut (created by sau on 02/08/2007)
+0x00000004 (4) ChinaMigrationMigratedFromCN (created by sau on 02/08/2007)
+0x00000008 (8) ChinaUserAcceptedCBTUAPP (created by sau on 02/08/2007)
+0x00000010 (16) HasSellerAccount (created by spandurangan on 02/25/2007)
+0x00000020 (32) HasListedFirstPPLItem (created by yixia on 02/26/2007)
+0x00000040 (64) HasBidGroupCreated (created by edtang on 03/14/2007)
+0x00000080 (128) HasSellerAccountChecked (created by spandurangan on 03/15/2007)
+0x00000100 (256) HasGuestBookEntry (created by kkanth on 03/27/2007)
+0x00000200 (512) NextgenCheckoutUser (created by vajoshi on 03/27/2007)
+0x00000400 (1024) PaisaPayEscrowRegistered (created by kmohan on 07/02/2007)
+0x00000800 (2048) IsEBXSDCMerchantOptedIn (created by nraghuram on 05/15/2007)
+0x00001000 (4096) Flag to decide if the seller is qualified for Artisan Marketplaces / World of Good
+0x00002000 (8192) UserHasSignedInWithWeakPassword (created by vmullai on 05/16/2007)
+0x00004000 (16384) UserHasWeakPassword (created by vmullai on 05/16/2007)
+0x00008000 (32768) HasSDCPurchase (created by kghosh on 05/22/2007)
+0x00010000 (65536) HasWeakPwdMCAlertPublished (created by vmullai on 06/05/2007)
+0x00020000 (131072) PaisaPayEscrowSuspended (created by kmohan on 07/02/2007)
+0x00040000 (262144) PaisaPayEscrowOutPaymentSuspended (created by kmohan on 07/02/2007)
+0x00080000 (524288) PaisaPayEscrowEMIEligible (created by kmohan on 07/02/2007)
+0x00100000 (1048576) PaisaPayEscrowEMISuspended (created by kmohan on 07/02/2007)
+0x00200000 (2097152) ExpressMerchEmailOptOut (created by jcavano on 07/09/2007)
+0x00400000 (4194304) IsTrinityDualAuth (created by harishn on 07/17/2007)
+0x00800000 (8388608) IsPaypalAutomaticLinkingDisabled (created by harishn on 07/17/2007)
+0x01000000 (16777216) GuestUser (created by sjeripotula on 07/20/2007)
+0x02000000 (33554432) GivingWorksTnCAccepted (created by zhozhang on 07/26/2007)
+0x08000000 (134217728) IsBuyerRegChangeEmailPending (created by dhavalpatel on 04/25/2007)
+0x10000000 (268435456) IsSDCEmailPrefOptedIn (created by ssisthla on 05/07/2007)
+0x20000000 (536870912) HasUserSetSDCEmailPref (created by ssisthla on 05/07/2007)
+0x40000000 (1073741824) UnconfirmedUserTransaction (created by rcherian on 05/10/2007)
+FLAGSEX8
+See DataWarehouse/Flags for decode.
+0x00000001 (1) CrossBorderTrade (created by bmopuri on 16/08/2007)
+0x00000002 (2) SellerHasSeenNewbieSellerShippingPanel (created by shamilton on 21/08/2007)
+0x00000004 (4) SellerVerificationNotComplete (created by sbhalla on 29/08/2007)
+0x00000008 (8) IsBusinessSellerInfoOnFile (created by mkurapati on 7/09/2007)
+0x00000010 (16) NotificationPrefMigrated (created by sicheng on 9/10/2007)
+0x00000020 (32) NotificationPrefWithFreqMigrated (created by sicheng on 9/11/2007)
+0x00000040 (64) NextGenCheckoutForcedOptOut (created by manand on 10/18/2007)
+0x00000080 (128) KGBlockedRemedy (created by rcherian on 10/19/2007)
+0x00000100 (256) BusinessRequired (created by vsanthanakrishnan on 11/13/2007)
+0x00000200 (512) CSForceBusiness (created by vsanthanakrishnan on 11/13/2007)
+0x00000400 (1024) CSBusinessExemption (created by vsanthanakrishnan on 11/13/2007)
+0x00000800 (2048) IsYouth (created by dhavalpatel on 12/05/2007)
+0x00008000 (32768) WasYouth (created by dhavalpatel on 12/05/2007)
+0x00010000 (65536) HasListedAfterNewBiePC (created by shidesai on 14/1/2008)
+0x00020000 (131072) SocialNetworkFeedOptIn (created by ssharma on 01/17/2008)
+0x00040000 (262144) SellerDashboardEligible (created by dwei on 01/28/2008)
+0x00080000 (524288) HasCashback (created by napalanisamy on 02/05/2008)
+0x00100000 (1048576) HasCoupon (created by napalanisamy on 02/05/2008)
+0x00200000 (2097152) HasTags (created by amgupta on 02/19/2008)
+0x00400000 (4194304) IsRestrictedBuyerForUPI (created by kwei on 03/03/2008)
+0x00800000 (8388608) NeedEmailForProductSubmission (created by hqu on 11/06/2008)
+0x01000000 (16777216) NGVIOptOut (created by knagarajan on 03/10/2008)
+0x02000000 (33554432) CPOuser (created by weixjiang on 04/02/2008)
+0x04000000 (67108864) EbayBucksRegisteredUser (created by vganesan on 04/14/2008)
+0x08000000 (134217728) UserHasPSPSubscription (created by psannapareddy on 07/28/2008)
+0x10000000 (268435456) HasNotificationUserSettings (created by akokarski on 06/26/2008)
+0x20000000 (536870912) EnhancedWeakPasswordIndicator (created by rnagappa on 03/18/2008)
+0x40000000 (1073741824) BuyerViolationReportRestrictionPref (created by hbalasubramaniam on 03/25/2008)
+FLAGSEX9
+See DataWarehouse/Flags for decode.
+0x00000001 (1) HasNotificationUserPreference (created by bmopuri on 06/01/2008)
+0x00000002 (2) HALF_OPTIN_ON_EBAY - Flag that indicates whether half seller has opt in on ebay (created by wchan on 07/07/2008)
+0x00000004 (4) HALF_LARGE_SELLER (created by wchan on 07/07/2008)
+0x00000008 (8) AddUserApiInvokedByCarAd (created by gamakhija on 07/21/2008)
+0x00000010 (16) ShowVeryHighVolumeSellerUI (created by lfernandes on 07/21/2008)
+0x00000020 (32) InvalidUserEmailAddress (created by zhenxu on 08/18/2008)
+0x00000040 (64) UpdateEmailPreference (created by zhenxu on 08/18/2008)
+0x00000080 (128) isPayFlowRegisteredSeller (created by pijain on 08/19/2008)
+0x00000100 (256) IsFirstTimeFeedbackRevisionSeller (created by gganapati on 09/06/2008)
+0x00000200 (512) IsBuyerWithPendingRevisions (created by gganapati on 09/11/2008)
+0x00000400 (1024) canSeeEchoDashBoard (created by lfernandes on 09/15/2008), indicates whether user can see third party applications.
+0x00000800 (2048) hasActiveEchoSubscription (created by lfernandes on 09/15/2008)
+0x00001000 (4096) InvalidEmailAddress (created by maswamy on 06/15/2009)
+0x00002000 (8192) InvalidSecretQuestion (created by maswamy on 06/15/2009)
+0x00004000 (16384) InvalidDateOfBirth (created by maswamy on 06/15/2009)
+0x00008000 (32768) hasEchoSubscriptionInPast (created by lfernandes on 09/15/2008)
+0x00010000 (65536) hasUserAcceptedTheAgreement (created by ktenneti on 11/12/2008)
+0x00020000 (131072) InvitedForRewards (created by unarayanan on 12/12/2008)
+0x00040000 (262144) IsRewardsTestUser (created by unarayanan on 01/08/2009)
+0x00080000 (524288) UserEnrolledInRewards (created by twey on 02/04/2009)
+0x00100000 (1048576) UserWelcomeEmailSent (created by spalavalasa on 02/13/2009)
+0x00200000 (2097152) UserOptInForShoppingCart (created by unaik on 03/26/2009)
+0x00400000 (4194304) SellerPREFQuantityDisplay (created by didamodharan on 04/17/2009)
+0x00800000 (8388608) PersonalDataProcessed (created by maswamy on 06/15/2009)
+0x01000000 (16777216) SellerPerformanceStandardProgram1 (created by ssahter on 04/24/2009)
+0x02000000 (33554432) SellerPerformanceStandardProgram2 (created by ssahter on 04/24/2009)
+0x04000000 (67108864) SellerPerformanceStandardProgram3 (created by ssahter on 04/24/2009)
+0x08000000 (134217728) SellerPerformanceStandardProgram4 (created by ssahter on 04/24/2009)
+0x10000000 (268435456) SellerPerformanceStandardProgram5 (created by ssahter on 04/24/2009)
+0x20000000 (536870912) SellerPerformanceStandardProgram6 (created by ssahter on 04/24/2009)
+0x40000000 (1073741824) GlobalUserRegistration (created by nsambathkumar on 05/07/2009)
+Indicates whether the user registration is done from Global site.
+FLAGSEX10
+See DataWarehouse/Flags for decode.
+0x00000001 (1) Flag that indicates whether user should be blacklisted for Rewards enrollment messaging (created by jshanmugam on 06/01/2008)
+0x00000002 (2) Flag that indicates whether the user is registered to upload images (created by bvenkatarama on 08/20/2009)
+0x00000004 (4) Indicates if the buyer has been through UCP flow. If set the user would go through UCP flow (created by jgopiset on 08/24/2009)
+0x00000008 (8) Indicates if the buyer should not go through UCP (created by jgopiset on 08/24/2009)
+0x00000010 (16) Indicates if the User belongs to Classification Group (created by apandey on 09/17/2009)
+0x00000020 (32) Indicates if the User is a professional Seller for US,CA,CA-FR (created by krip on 10/29/2009)
+0x00000040 (64) Indicates if the User is branded Seller (created by leli on 12/14/2009)
+0x00000080 (128) Indicates if the User has a Tax Profile Present (ProjectID 23693) (created by rkumbhan on 12/17/2009)
+0x00000100 (256) When this flag is on, a seller will be directed in to the bear experience from my eBay, even if their ORACLE id is not in the sampling range defined for a given site. (created by shamilton on 12/23/2009)
+0x00000200 (512) When this flag bit is on, the user will not be directed to the BEAR experience from my eBay, even if their BEAR_USER_AB_OVERIDE flag is ON. (created by shamilton on 12/23/2009)
+0x00000400 (1024) when this flag bit is on, the user will be evaluated for the New Seller Holds eligibility (created by rksubramanian on 01/11/2010)
+0x00000800 (2048) If user is invited for eBay Pics the flag bit is on (created by srufus on 02/11/2010)
+0x00001000 (4096) Indicates if the user is New car user, created by CARad (created by btappe on 02/16/2010)
+0x00002000 (8192) Indicates if the User is CARad managed user (created by btappe on 02/16/2010)
+0x00004000 (16384) True if the user has customized his messages settings (created by vjuneja on 02/18/2010)
+0x00008000 (32768) When this flag bit is on, the user will be directed to the BEAR experience from my eBay, even if their BEAR_USER_AB_OVERIDE flag is OFF. (created by shamilton on 02/19/2010)
+0x00010000 (65536) Registered PayFlow Account - When this flag bit is on, additional preference settings will be shown on seller preference page (created by vganesan on 03/01/2010)
+0x00020000 (131072) This flag bit indicated that the user was Registered through a native Mobile app (currently *9/15/2011* only iPhone and iPad apps have registration capability) (created by apandey on 03/06/2010)
+0x00040000 (262144) Half.com defaulted user level1 (created by akumart on 03/29/2010)
+0x00080000 (524288) Half.com defaulted user level2 (created by akumart on 03/29/2010)
+0x00100000 (1048576) Bear - Till this flag bit is off, educational bubble for Data table will be shown to user (created by rajgupta on 03/31/2010)
+0x00200000 (2097152) Bear - Till this flag bit is off, educational bubble for edit layer will be shown to user (created by rajgupta on 03/31/2010)
+0x00400000 (4194304) Indicates if the User has registered for IMCC payment gateway (created by rradhakrish on 06/15/2010)
+0x00800000 (8388608) Indicates whether the User payment gateway status is active or not (created by rradhakrish on 06/15/2010)
+0x01000000 (16777216) Indicates whether the seller is whitelisted for Half.com's enforcing shipment tracking (created by akumart on 06/17/2010)
+0x02000000 (33554432) Seller Limits Flag - Indicates if the new user has registered as a seller (created by smaharana on 07/26/2010)
+0x04000000 (67108864) Seller Preference for Auth.Net Gateway (created by rradhakrish on 08/18/2010)
+0x08000000 (134217728) Seller Preference for Payflow Gateway (created by rradhakrish on 08/18/2010)
+0x10000000 (268435456) Seller Preference for CyberSource Gateway (created by rradhakrish on 08/18/2010)
+FLAGSEX11
+See DataWarehouse/Flags for decode.
+0x00000001 (1) Indicates the user has a public wish list and should be indexed for Wish List searches (created by jcavano on 07/01/2011)
+0x00000002 (2) Turbo Checkout opted in (created by haung on 07/27/2011)
+0x00000004 (4) Indicates whether the eBay user was evaluated as part of multiaccount account policy (created by schennu on 08/09/2011)
+0x00000008 (8) Indicated if the seller listed atleast one item under ECP program (created by gkodaganti on 09/21/2011)
+0x00000010 (16) Indicates that seller opted out from Runa (created by gkodaganti on 09/21/2011)
+0x00000020 (32) This flag indicates the User is granted with eBay credits (created by vselvaraj on 10/12/2011)
+0x00000040 (64) When this flag is on, a seller will using seller policies even if their ORACLE id is not in the sampling range defined for a given site (created by sidas on 11/09/2011)
+0x00000080 (128) When this flag bit is on, the seller will not be using seller policies, even if their SELLER_POLICIES_USER_AB_OVERRIDE flag is ON (created by sidas on 11/09/2011)
+0x00000100 (256) When this flag bit is on, the seller will  be using seller policies, even if their SELLER_POLICIES_USER_AB_OVERRIDE flag is OFF (created by sidas on 11/09/2011)
+0x00000200 (512) This flag indicates the UserAccount is ATOed (created by pkumarappan on 11/11/2011)
+0x00000400 (1024) This flag will specify whether to set default Fast and Free Delivery Estimate for sellers (created by samchandra on 12/28/2011)
+0x00000800 (2048) If the flag bit is set, dont show UPC educational bubble (created by hshivamurthy on 01/26/2012)
+0x00001000 (4096) Indicates if seller opt-in return center (created by quma on 02/03/2012)
+0x00002000 (8192) SYI business policies just in time messaging (created by sreekanth on 02/24/2012)
+0x00004000 (16384) When this flag is on for a user, the user is exempt from being subjected to any C2C-based AB tests (created by shamilton on 02/29/2012)
+0x00008000 (32768) Flag to indicate whether User holds a speciality seller status, registered for Emerging Verticals(Collectibles, Toys, Sporting Goods) (created by saumehta on 03/05/2012)
+0x00010000 (65536) If the flag bit is set, dont show eTRS educational bubble (created by saumehta on 03/08/2012)
+0x00020000 (131072) Indicates that user chose to opt out of turbo checkout after being opted in (created by prajadhav on 03/15/2012)
+0x00040000 (262144) Indicates if the seller is marked for bulk listing for use with seller qualification batch task (created by pralam on 04/08/2012)
+0x00080000 (524288) Indicates if the seller is black listed for seller policies (created by raarcot on 05/18/2012)
+0x00100000 (1048576) Flag to determine if the user is an instant sale user (created by nganapathi on 06/29/2012)
+0x00200000 (2097152) Flag to determine if the user should see the educational module in BP management page (created by sidas on 08/10/2012)
+0x00400000 (4194304) Indicates whether user got migrated from  site 100 to site 0 (created by sambikapathy on 08/16/2012)
+0x00800000 (8388608) Indicates if user has any social signals such as Like, Want or Own (created by akokarski on 08/20/2012)
+0x01000000 (16777216) Indicates if the seller is opted into passion platform (created by dwei on 09/10/2012)
+0x02000000 (33554432) Indicates if a user is opted out of Geo location specific experience (created by ameckoni on 10/09/2012)
+0x20000000 (536870912) Indicates if the seller is overriding policies data. Currently shipping cost override is supported (created by spalil on 02/20/2013)
+0x40000000 (1073741824)) Indicated if the user is opted into the shipment tracking notification. SMS would be sent to the user(Buyer) once the item is shipped (created by gkodaganti on 10/15/2012)
+USER_IP_ADDR
+REQ_EMAIL_COUNT
+LAST_MODIFIED_USER_INFO
+PAYBOX_NUMBER
+PAYBOX_COUNTRY_ID
+NBR_STORED_ADDRESS
+DATE_OF_BIRTH
+There seems to be a data issue with DATE_OF_BIRTH = '1978-09-20' as an unusual high number of people have that entry --> looks like this is caused by the fact that all unconfirmed guest registered users (user_sts_code=17 and guest_ind='Y') has date_of_birth='1978-09-20' as default
+SITE_PERSONAL_ID
+EOP_VERIFY_STAT
+EOP_LAST_VERIFY
+LAST_BANNER_PRTNR_ID
+AOL_MASTER_ID
+TAX_ID
+This field is never pulled in the DW, though present in ebay_user_info.
+Sample Queries for finding TAX_ID and related information (Updated on 3/18/2011)
+TAX_ID_APPLICATION_DATE
+TAX_ID_CONFIRM_DATE
+TAX_STATUS
+Description of the user's VAT Tax ID Application.
+Possible values are: (TaxExemptStatusNotAppliedYet = 0, TaxExemptStatusPending = 1, TaxExemptStatusGranted = 2, TaxExemptStatusDenied = 3, TaxExemptStatusDeletedByCS =4 , TaxExemptStatusDeletedByuser =5 )
+MOTORS_SELLER_LEVEL
+Potential values:
+0 = Not in any level yet
+1 = Motors TS Guaranteed Dealer (MTSD)
+2 = Motors TS Verified Dealer (MTSVD)
+3 = Motors Top Seller (MTS)
+4 = Partner Account (Not Motors - TSAM)
+5 = Motors Guaranteed Dealer (MGD)
+6 = Motors Verified Dealer (MVD)
+7 = Unmanaged Top Parts Seller
+8 = Parts Top Seller
+9 = Other Vehicle Seller
+10 = Motors TS Premium Guaranteed Dealer (MTPGD)
+11 = Motors Premium Guaranteed Dealer (MPGD)
+12 = Motors TS Ultra Guaranteed Dealer (MTUGD)
+13 = Motors Ultra Guaranteed Dealer (MUGD)
+14 = Motors Vehicle Dealer
+MOTORS_SELLER_INITIATE_DATE
+MBYTE_USERID
+Multi-byte user ID. This contains the UTF-8 encoded user ID selected on multi-byte sites (China, Poland?, Taiwan).
+Note that Business Objects doesn't support UTF8, so you won't be able to extract it via BO. If using Queryman, you also need to ensure that your ODBC connection is set to UTF8. See DataWarehouse/TDSQL for more info (look in the Howto:Character Strings section).
+VERIFICATION_METHOD
+VERIFICATION_TYPE_CODE
+VERIFICATION_DATE
+ANONYMOUS_EMAIL_YN_FLAG_ID
+REG_TEST_GRP_ID
+MSGCENTER_PROMOSOFFERSEVENTS
+BUSN_TYPE_ID
+Type of business.
+Potential values: -99 = No business type selected, 1 = Other, 2 = Retailers, 3 = Distributors/Market Traders/Jobbers, 4 = Self Employed, 5 = Dealer, 6 = Other, 7 = Broker/Jobber/Market Trader/Dealer, 8 = Car Dealer, 9 = Manufacturer, 10 = Other, 11 = Wholesaler or Distributor.
+BBP_MIN_ALWD_FDBK_SCORE
+GEO_PSTL_CODE
+USER_DSGNTN_ID
+This indicates the type of seller (Private vs. Business). For certain EU countries, this is the field to use to distinguish Business sellers. However, not all countries use this flag to indicate business sellers, so tread carefully.
+Potential values:
+0 = Undefined
+1 = Private
+2 = Business
+USER_DSGNTN_DT
+USER_DSGNTN_TM
+EBX_ELGBL_SLR_YN_ID
+Top-level flag indicating seller's eBay Express qualification.
+This flag is derived by the DW. It is a rollup of the other four eBay Express flags. The logic used for the rollup is, this value is only set to 1 when the user has not been forced out by CS, has not opted out in My eBay, and is qualified via either the batch job or CS force in.
+EBX_QLFD_SLR_YN_ID
+Indicates whether this seller is qualified based on the batch job for that seller's country.
+Note that in early release, only US sellers will ever qualify this way, as the German site is planning to manually vet their sellers, and will be setting the batch so that the batch never qualifies sellers.
+SLR_EBX_OPTN_STATUS_ID
+Replaced EBX_MYEBAY_OPTOUT_SLR_YN_ID on 12/3/2006
+Indicates whether the seller has chosen to opt out of eBay Express via a preference surfaced in My eBay.
+Values are: 0 - Seller opted in all his ebay items (Default for all sites, 1 - Seller has completely opted out from eXpress, and 2 - Seller opted in to Auction Format 14 only (Applicable to sites which support the new format)
+EBX_CS_FRC_OUT_YN_ID
+Indicates whether CS has chosen to force this seller out of eBay Express.
+EBX_CS_FRC_IN_YN_ID
+Indicates whether CS has chosen to force this seller into eBay Express.
+The German Express site will be using this flag to opt vetted sellers into Express.
+EBX_REGSTRD_USER_YN_ID
+Indicates whether the user initially registered on eBay Express. This flag should be set once upon registration and never unset.
+EBX_PREF_LAST_MODFD_DT
+Indicates the date that the user last changed their My eBay opt-out setting.
+EBX_PREF_LAST_MODFD_TM
+Indicates the time that the user last changed their My eBay opt-out setting.
+USERPREFERENCEMIGRATED
+USERSELLERFLAGSSPECIALOFFER
+CARLISTER_DEALER_FLAG
+PRI_USER_ID
+User self-declared linked primary user ID. Available to users with multiple accounts who want to self-declare linkages between them. Works in conjunction with USER_LINKED_ACCOUNT.
+TOP_BYR_GMB_SCORE
+Based on a monthly calculation performed by DW. The upstream column is USER_PRGRM_HST.PRGRM_ID, which belong to Subject Area of User Segmentation.  More definition of this column refer to http://iweb.corp.ebay.com/prod/V3/DataModel/Reports/UserReadWriteNHost/UserReadWriteNHost_files/User76.htm#1. As of 2013/06/19 that link says: Top Buyer Webform Support - This project evaluates buyers based on their GMB only and is used for Webform submissions to route Top Buyers to the new Top Buyer support teams. The DW will determine a Top Buyer Score and a Top Buyer Bucket and provide a monthly feed to site. The buckets are: 1 (Top 1%), 5 (2-5%), and 30 (6-30%). This is a global implementation, with US, UK, DE, and IE being the drivers behind this initiative. The columns previously added TOP_BUYER_SCORE and TOP_BUYER_LEVEL were created for the Buyer Activity Accelerator project (http://tracker.corp.ebay.com/cfdocs/proddev/releaseschedule/feature_view_details.cfm?parentid=5153): This project evaluates buyers based on their GMB and 40+ buyer activities and will be a PowerBuyer program, much like the PowerSeller program. The DW will determine a Top Buyer Score and a Top Buyer Level and provide a monthly feed to site. The levels are Bronze, Silver, Gold, Platinum, and Titanium. This is a global initiative, but US, UK, DE, and IE will not be using this scoring/segmentation method. I [who?] thought this project was going to get cancelled because of this, but I [who?] just talked to the Product Manager today [when?] (Diana Baraniewicz) and she informed me that there are a number of international countries that want to implement this so it appears this project will get revamped.
+REG_INITD_SITE_ID
+REG_CMPLTD_SITE_ID
+FR_SEP_AGMT_FLAG
+CBT_SBSCR_DT
+GUEST_IND
+PP_AUTO_LINKING_DISABLED_IND
+SYI_BLOCK_BEGIN_DT
+SYI_BLOCK_DT
+SLR_BLOCK_RSN_TYPE
+CS_FORCE_BSNS_DT
+CS_BSNS_EXMPTN_DT
+TOP_RATED_SELLER_US_YN
+TOP_RATED_SELLER_UK_YN
+TOP_RATED_SELLER_DE_YN
+TOP_RATED_SELLER_GLOBAL_YN
+Indexes
+
+USER_ID (PI), EMAIL (NUSI), USER_SLCTD_ID (NUSI)
+Data Volumes
+
+Average new users per day (as of 7/3/07): 100-120K
+Total number of users in table (as of 7/3/07): 291M
