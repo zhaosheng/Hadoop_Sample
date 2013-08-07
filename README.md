@@ -1,2 +1,4 @@
-Hadoop_Yina
+Hadoop_Sample Project
 ===========
+
+Pom.xml
