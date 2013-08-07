@@ -14,7 +14,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 /**
  * Created with IntelliJ IDEA.
- * Project: Hadoop_Yina
+ * Project: Hadoop_Sample
  * User: szhao
  * Date: 8/6/13
  * Time: 10:58 AM

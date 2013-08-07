@@ -1,6 +1,6 @@
 /**
  * Created with IntelliJ IDEA.
- * Project: Hadoop_Yina
+ * Project: Hadoop_Sample
  * User: szhao
  * Date: 8/6/13
  * Time: 12:45 PM
