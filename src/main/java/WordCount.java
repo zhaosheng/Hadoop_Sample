@@ -26,7 +26,7 @@ public class WordCount extends Configured implements Tool {
 
         Configuration conf = getConf();
 
-        // This line is to hack the chmod exception in Windows
+        // This line is to hack the chmod exception in Windows, please remove before production release!
         conf.set("fs.file.impl", "com.conga.services.hadoop.patch.HADOOP_7682.WinLocalFileSystem");
 
         Path inputPath = new Path(strings[0]);
